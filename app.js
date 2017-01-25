@@ -15,8 +15,9 @@ function createWindow(){
         slashes: true
     }))
 
+    startGpsDeamon()
+    
     win.webContents.openDevTools()
-    win.webContents.executeJavaScript("map.updateUserGPS({latitude: 0, longitude: 0})")
 
     win.on('closed', () => {
         win = null
@@ -26,8 +27,9 @@ function createWindow(){
 app.on('ready', createWindow)
 
 app.on('window-all-closed', () => {
+    daemon.stop()
     if(process.platform !== 'darwin'){
-        app.quit()
+        app.quit()	
     }
 })
 
@@ -37,22 +39,26 @@ app.on('active', () => {
     }
 })
 
-function startGpsDeamon(){
+function startGpsDeamon(){    
     daemon = new gpsd.Daemon({
         program: '/usr/local/sbin/gpsd',
         device: '/dev/ttyS0'
     })
 
     daemon.start(function(){
-        var listener = new gpsd.Listener();
+        var listener = new gpsd.Listener()
 
-        listener.on('TPV', function(){
-            //What happends when the listener gets an update
+        listener.on('TPV', function(tpv){            
+	    win.webContents.executeJavaScript(`map.updateUserGPS({lat: ${tpv.lat}, lon: ${tpv.lon}})`)
+	    win.webContents.executeJavaScript(`map.mapView.flyTo([${tpv.lat}, ${tpv.lon}], 13)`)
         })
 
         listener.connect(function(){
             listener.watch()
+	    console.log("CONNECTED LISTENER")
         })
+
+	console.log("DAEMON STARTED")
     })
     daemon.start()
 }
