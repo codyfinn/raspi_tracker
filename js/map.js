@@ -7,6 +7,13 @@ var Map = function(){
         fillOpacity: 0.5,
         radius: 2.5
     }).addTo(this.mapView)
+
+    this.baloonRadius = L.circle([51.9977, 0.7407], {
+        color: 'red',
+        fillColor: '#f30',
+        fillOpacity: 0.5,
+        radius: 3.0
+    }).addTo(this.mapView)
     
 
     L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
@@ -22,8 +29,8 @@ var Map = function(){
         this.userRadius.setLatLng([tpv.lat, tpv.lon])
     }
 
-    this.updateBalloonGPS = function(tpv){
-        
+    this.updateBaloonGPS = function(tpv){
+        this.baloonRadius.setLatLng([tpv.lat, tpv.lon])
     }
 }
 map = new Map()

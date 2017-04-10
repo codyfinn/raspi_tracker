@@ -2,9 +2,11 @@ const {app, BrowserWindow} = require('electron')
 const path = require('path')
 const url = require('url')
 const gpsd = require('node-gpsd')
+const FIFO = require('fifo-js')
 
 let win
 let daemon
+let fifo
 
 function createWindow(){
     win = new BrowserWindow({width: 800, height: 600})
@@ -16,6 +18,17 @@ function createWindow(){
     }))
 
     startGpsDeamon()
+    console.log("opening fifo")
+    fifo = new FIFO("/tmp/gps")
+    let json
+    fifo.setReader((text) =>{
+	if(!(text === '')){
+	    console.log(text);
+	    json = JSON.parse(text)
+	    win.webContents.executeJavaScript(`map.updateBaloonGPS({lat: ${json.lat}, lon: ${json.lon}})`)
+	    //win.webContents.executeJavaScript(`map.mapView.flyTo([${tvp.lat}, ${tvp.lon}], 13)`)
+	}			
+    })
     
     win.webContents.openDevTools()
 
@@ -49,8 +62,7 @@ function startGpsDeamon(){
         var listener = new gpsd.Listener()
 
         listener.on('TPV', function(tpv){            
-	    win.webContents.executeJavaScript(`map.updateUserGPS({lat: ${tpv.lat}, lon: ${tpv.lon}})`)
-	    win.webContents.executeJavaScript(`map.mapView.flyTo([${tpv.lat}, ${tpv.lon}], 13)`)
+	    win.webContents.executeJavaScript(`map.updateUserGPS({lat: ${tpv.lat}, lon: ${tpv.lon}})`)	    
         })
 
         listener.connect(function(){
